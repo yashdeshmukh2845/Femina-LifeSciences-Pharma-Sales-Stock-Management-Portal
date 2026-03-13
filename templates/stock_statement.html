@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4 d-print-none">
+    <div class="col-md-6">
+        <h2 class="fw-bold">Monthly Stock Statement</h2>
+        <p class="text-muted">Detailed inventory movement for the selected period.</p>
+    </div>
+    <div class="col-md-6 text-md-end">
+        <form class="row g-2 justify-content-md-end" method="GET">
+            <div class="col-auto">
+                <select name="month" class="form-select shadow-sm">
+                    {% for m_num, m_name in months %}
+                    <option value="{{ m_num }}" {{ 'selected' if m_num == selected_month }}>{{ m_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <select name="year" class="form-select shadow-sm">
+                    {% for y in years %}
+                    <option value="{{ y }}" {{ 'selected' if y == selected_year }}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary shadow-sm">Generate</button>
+            </div>
+            <div class="col-auto">
+                <button onclick="window.print()" class="btn btn-light shadow-sm"><i class="fas fa-print"></i></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm border-radius-12 overflow-hidden">
+    <div class="card-header bg-white py-3 border-0 text-center">
+        <h4 class="fw-bold mb-0">FEMINA LIFESCIENCES PVT LTD</h4>
+        <p class="mb-0 text-muted">Stock Statement for {{ months[selected_month-1][1] }} {{ selected_year }}</p>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle mb-0 text-center excel-table">
+                <thead class="bg-light align-middle fw-bold">
+                    <tr>
+                        <th rowspan="2" class="text-start ps-3">Product Description</th>
+                        <th rowspan="2">Pack</th>
+                        <th rowspan="2">Opening Stock</th>
+                        <th colspan="4" class="bg-success-light">Addition (+)</th>
+                        <th colspan="3" class="bg-danger-light">Subtraction (-)</th>
+                        <th rowspan="2" class="bg-primary-light">Closing Stock</th>
+                    </tr>
+                    <tr class="small">
+                        <th class="bg-success-light">Receive</th>
+                        <th class="bg-success-light">Sale Return</th>
+                        <th class="bg-success-light">Replace / Other</th>
+                        <th class="bg-success-light text-primary fw-bold">Total Qty</th>
+                        <th class="bg-danger-light">Sale Qty</th>
+                        <th class="bg-danger-light">P/R Qty</th>
+                        <th class="bg-danger-light">Replace / Other</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stock in stocks %}
+                    <tr>
+                        <td class="text-start ps-3 fw-semibold">{{ stock.product_name or stock.product_ref.product_name }}</td>
+                        <td>{{ stock.pack or stock.product_ref.pack }}</td>
+                        <td class="bg-light-gray">{{ stock.opening_stock }}</td>
+                        
+                        <td class="text-success">{{ stock.received_stock }}</td>
+                        <td class="text-success">{{ stock.sale_return_qty }}</td>
+                        <td class="text-success">{{ stock.replace_others_in }}</td>
+                        <td class="fw-bold text-primary">{{ stock.total_quantity }}</td>
+                        
+                        <td class="text-danger">{{ stock.sales }}</td>
+                        <td class="text-danger">{{ stock.pr_quantity }}</td>
+                        <td class="text-danger">{{ stock.replace_others_out }}</td>
+                        
+                        <td class="fw-bold text-dark bg-primary-light">{{ stock.closing_stock }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.excel-table th, .excel-table td {
+    padding: 0.5rem;
+    font-size: 0.85rem;
+}
+.bg-success-light { background-color: rgba(25, 135, 84, 0.05); }
+.bg-danger-light { background-color: rgba(220, 53, 69, 0.05); }
+.bg-primary-light { background-color: rgba(13, 110, 253, 0.1); }
+.bg-light-gray { background-color: #f8f9fa; }
+
+@media print {
+    .sidebar, .navbar, .d-print-none { display: none !important; }
+    #content { margin-left: 0 !important; padding: 0 !important; width: 100% !important; }
+    .card { border: 1px solid #dee2e6 !important; box-shadow: none !important; }
+    .table-responsive { overflow: visible !important; }
+}
+</style>
+{% endblock %}

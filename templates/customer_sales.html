@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4 d-print-none">
+    <div class="col-md-6">
+        <h2 class="fw-bold">Customer Wise Sales Report</h2>
+        <p class="text-muted">Total sales and performance grouped by customer.</p>
+    </div>
+    <div class="col-md-6 text-md-end">
+        <div class="btn-group shadow-sm">
+            <button onclick="window.print()" class="btn btn-light"><i class="fas fa-print me-1"></i> Print Report</button>
+            <a href="#" class="btn btn-primary"><i class="fas fa-file-excel me-1"></i> Export</a>
+        </div>
+    </div>
+</div>
+
+{% for customer, data in customer_data.items() %}
+<div class="card border-0 shadow-sm border-radius-12 mb-4 overflow-hidden">
+    <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0 text-primary"><i class="fas fa-user-tag me-2"></i> {{ customer }}</h5>
+        <span class="badge bg-primary rounded-pill px-3">Total Value: ₹{{ "{:,.2f}".format(data.total_value) }}</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Invoice #</th>
+                        <th>Product Name</th>
+                        <th>Date</th>
+                        <th class="text-center">Quantity</th>
+                        <th class="text-center">Rate</th>
+                        <th class="text-end pe-4">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale in data.sales %}
+                    <tr>
+                        <td class="ps-4 fw-bold">#{{ sale.invoice_no }}</td>
+                        <td>{{ sale.product_ref.product_name }} <small class="text-muted">({{ sale.product_ref.pack }})</small></td>
+                        <td>{{ sale.sale_date.strftime('%d-%m-%Y') }}</td>
+                        <td class="text-center">{{ sale.quantity }}</td>
+                        <td class="text-center">₹{{ "{:,.2f}".format(sale.rate) }}</td>
+                        <td class="text-end pe-4 fw-bold text-dark">₹{{ "{:,.2f}".format(sale.value) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-users-slash fa-3x text-light mb-3"></i>
+    <h5 class="text-muted">No customer sales data found.</h5>
+</div>
+{% endfor %}
+
+<style>
+@media print {
+    .sidebar, .navbar, .d-print-none { display: none !important; }
+    #content { margin-left: 0 !important; padding: 0 !important; width: 100% !important; }
+    .card { border: 1px solid #dee2e6 !important; box-shadow: none !important; page-break-inside: avoid; }
+}
+</style>
+{% endblock %}

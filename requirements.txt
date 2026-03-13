@@ -1,0 +1,12 @@
+flask
+flask-sqlalchemy
+flask-login
+flask-migrate
+psycopg2-binary
+pandas
+openpyxl
+gunicorn
+werkzeug
+python-dotenv
+flask-wtf
+email-validator

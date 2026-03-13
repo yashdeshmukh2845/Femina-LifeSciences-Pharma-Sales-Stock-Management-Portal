@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold">Stock Report</h2>
+        <p class="text-muted">Monitor your current inventory and stock movements.</p>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm border-radius-12">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Product Name</th>
+                        <th>Pack</th>
+                        <th>Opening Stock</th>
+                        <th>Received Stock</th>
+                        <th>Sales</th>
+                        <th>Closing Stock</th>
+                        <th class="text-end pe-4">Last Movement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stock in stocks %}
+                    <tr>
+                        <td class="ps-4 fw-medium">{{ stock.product_ref.product_name }}</td>
+                        <td>{{ stock.product_ref.pack }}</td>
+                        <td>{{ stock.opening_stock }}</td>
+                        <td><span class="text-success">+{{ stock.received_stock }}</span></td>
+                        <td><span class="text-danger">-{{ stock.sales }}</span></td>
+                        <td>
+                            <span class="fw-bold {{ 'text-danger' if stock.closing_stock < 10 else 'text-dark' }}">
+                                {{ stock.closing_stock }}
+                            </span>
+                        </td>
+                        <td class="text-end pe-4 text-muted small">
+                            {{ stock.last_movement.strftime('%d-%m-%Y %H:%M') if stock.last_movement }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">No stock records yet. Stock is auto-calculated from sales.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white py-3">
+                <h4 class="mb-0 fw-bold"><i class="fas fa-truck-ramp-box me-2"></i>Stock Entry / Receive Stock</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="product_id" class="form-label fw-bold">Select Product</label>
+                        <select class="form-select form-select-lg bg-light" id="product_id" name="product_id" required>
+                            <option value="">-- Select Product From Master --</option>
+                            {% for product in products %}
+                            <option value="{{ product.id }}">{{ product.product_name }} ({{ product.pack }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text mt-2">Choose the product name and pack size defined in the Product Master.</div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="batch_no" class="form-label fw-bold">Batch Number</label>
+                            <input type="text" class="form-control form-control-lg bg-light" id="batch_no" name="batch_no" placeholder="e.g., BN12345" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="quantity" class="form-label fw-bold">Quantity Received</label>
+                            <input type="number" class="form-control form-control-lg bg-light" id="quantity" name="quantity" min="1" placeholder="0" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="date" class="form-label fw-bold">Receipt Date</label>
+                        <input type="date" class="form-control form-control-lg bg-light" id="date" name="date" value="{{ today }}" required>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm">
+                            <i class="fas fa-save me-2"></i>Save Inventory Entry
+                        </button>
+                        <a href="{{ url_for('stock.stock_report') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
