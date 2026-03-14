@@ -31,9 +31,5 @@ app.register_blueprint(stock_bp)
 app.register_blueprint(reports_bp)
 app.register_blueprint(main_bp)
 
-# Create database tables
-with app.app_context():
-    db.create_all()
-
 if __name__ == '__main__':
     app.run(debug=True)
