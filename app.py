@@ -31,5 +31,5 @@ app.register_blueprint(stock_bp)
 app.register_blueprint(reports_bp)
 app.register_blueprint(main_bp)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    app.run()
