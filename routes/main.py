@@ -21,9 +21,36 @@ def dashboard():
     total_products = Product.query.filter_by(user_id=current_user.id).count()
     total_customers = db.session.query(db.func.count(db.func.distinct(Sale.customer_name))).filter_by(user_id=current_user.id).scalar() or 0
     
-    # Data for charts (placeholder for now, can be populated with real trends)
+    # Data for charts
+    # 1. Monthly Sales Trend
+    monthly_sales = db.session.query(
+        func.date_trunc('month', Sale.sale_date).label('month'),
+        func.sum(Sale.value).label('total_sales')
+    ).filter_by(user_id=current_user.id)\
+     .group_by('month')\
+     .order_by('month').all()
+    
+    sales_labels = [s.month.strftime('%b %Y') for s in monthly_sales]
+    sales_values = [float(s.total_sales) for s in monthly_sales]
+
+    # 2. Product Distribution
+    product_dist = db.session.query(
+        Product.product_name,
+        func.sum(Sale.value).label('total')
+    ).join(Sale, Sale.product_id == Product.id)\
+     .filter(Sale.user_id == current_user.id)\
+     .group_by(Product.product_name)\
+     .order_by(func.sum(Sale.value).desc()).limit(10).all()
+
+    pie_labels = [p.product_name for p in product_dist]
+    pie_values = [float(p.total) for p in product_dist]
+
     return render_template('dashboard.html', 
                            total_sales_value=total_sales_value,
                            total_sales_count=total_sales_count,
                            total_products=total_products,
-                           total_customers=total_customers)
+                           total_customers=total_customers,
+                           sales_labels=sales_labels,
+                           sales_values=sales_values,
+                           pie_labels=pie_labels,
+                           pie_values=pie_values)

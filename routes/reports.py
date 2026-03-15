@@ -2,10 +2,43 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from models import db, Sale, Product, Stock
 from datetime import datetime
-import pandas as pd
+from utils.excel_export import export_stock_statement_to_excel
 import io
 
 reports_bp = Blueprint('reports', __name__)
+
+@reports_bp.route('/export-stock-report')
+@login_required
+def export_stock_report():
+    month = int(request.args.get('month', datetime.now().month))
+    year = int(request.args.get('year', datetime.now().year))
+    
+    stocks = Stock.query.filter_by(month=month, year=year, user_id=current_user.id).all()
+    
+    # If no records for this month, carry over or create empty
+    if not stocks:
+        products = Product.query.filter_by(user_id=current_user.id).all()
+        stocks = []
+        for p in products:
+            prev = Stock.query.filter(Stock.product_id == p.id, Stock.user_id == current_user.id).order_by(Stock.year.desc(), Stock.month.desc()).first()
+            opening = prev.closing_stock if prev else 0
+            stocks.append(Stock(
+                product_id=p.id, month=month, year=year, user_id=current_user.id,
+                opening_stock=opening, received_stock=0, sale_return_qty=0, 
+                replace_others_in=0, total_quantity=opening, sales=0, 
+                pr_quantity=0, replace_others_out=0, closing_stock=opening,
+                product_ref=p
+            ))
+            
+    month_name = datetime(2000, month, 1).strftime('%B')
+    excel_file = export_stock_statement_to_excel(stocks, month_name, year)
+    
+    return send_file(
+        excel_file,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=f"Stock_Statement_{month_name}_{year}.xlsx"
+    )
 
 @reports_bp.route('/reports/stock-statement')
 @login_required

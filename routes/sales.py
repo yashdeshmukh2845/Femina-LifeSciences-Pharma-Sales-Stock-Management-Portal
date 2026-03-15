@@ -2,7 +2,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from models import db, Sale, Product, Stock
 from datetime import datetime
-from utils.excel_handler import process_sales_excel, export_sales_to_excel
+from utils.excel_import import process_standardized_import
+from utils.excel_export import export_stock_statement_to_excel
 import io
 
 sales_bp = Blueprint('sales', __name__)
@@ -155,24 +156,29 @@ def delete_sale(id):
     flash(f'Sale {sale.invoice_no} deleted!')
     return redirect(url_for('sales.sales_report'))
 
+@sales_bp.route('/import-stock-report', methods=['GET', 'POST'])
 @sales_bp.route('/upload-excel', methods=['GET', 'POST'])
 @login_required
 def upload_excel():
     if request.method == 'POST':
         if 'file' not in request.files:
-            flash('No file part')
+            flash('No file part', 'danger')
             return redirect(request.url)
         file = request.files['file']
+        month = int(request.form.get('month', datetime.utcnow().month))
+        year = int(request.form.get('year', datetime.utcnow().year))
+        
         if file.filename == '':
-            flash('No selected file')
+            flash('No selected file', 'danger')
             return redirect(request.url)
+            
         if file:
-            success, message = process_sales_excel(file, current_user.id)
+            success, message = process_standardized_import(file, current_user.id, month, year)
             if success:
-                flash(message)
+                flash(message, 'success')
             else:
-                flash(f"Error: {message}")
-            return redirect(url_for('sales.sales_report'))
+                flash(message, 'danger')
+            return redirect(url_for('stock.index'))
     return render_template('upload_excel.html')
 
 @sales_bp.route('/sales/invoice/<int:id>')
@@ -184,14 +190,29 @@ def view_invoice(id):
         return redirect(url_for('sales.sales_report'))
     return render_template('invoice.html', sale=sale)
 
+@sales_bp.route('/export-stock-report')
 @sales_bp.route('/export-excel')
 @login_required
 def export_excel():
-    sales = Sale.query.filter_by(user_id=current_user.id).all()
-    excel_file = export_sales_to_excel(sales)
+    month = int(request.args.get('month', datetime.utcnow().month))
+    year = int(request.args.get('year', datetime.utcnow().year))
+    
+    stocks = Stock.query.filter_by(user_id=current_user.id, month=month, year=year).all()
+    
+    # Create empty stock objects if none exist
+    if not stocks:
+        products = Product.query.filter_by(user_id=current_user.id).all()
+        for p in products:
+            prev = Stock.query.filter_by(product_id=p.id, user_id=current_user.id).order_by(Stock.year.desc(), Stock.month.desc()).first()
+            opening = prev.closing_stock if prev else 0
+            stocks.append(Stock(product_id=p.id, opening_stock=opening, product_ref=p, received_stock=0, sale_return_qty=0, replace_others_in=0, sales=0, pr_quantity=0, replace_others_out=0, closing_stock=opening, total_quantity=opening))
+            
+    month_name = datetime(2000, month, 1).strftime('%B')
+    excel_file = export_stock_statement_to_excel(stocks, month_name, year)
+    
     return send_file(
         excel_file,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         as_attachment=True,
-        download_name=f'Sales_Report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        download_name=f"Stock_Statement_{month_name}_{year}.xlsx"
     )

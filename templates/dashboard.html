@@ -96,10 +96,10 @@
     new Chart(ctx, {
         type: 'line',
         data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            labels: {{ sales_labels|tojson }},
             datasets: [{
                 label: 'Monthly Sales Value',
-                data: [12000, 19000, 3000, 5000, 2000, 3000],
+                data: {{ sales_values|tojson }},
                 borderWidth: 3,
                 borderColor: '#0d6efd',
                 backgroundColor: 'rgba(13, 110, 253, 0.1)',
@@ -120,16 +120,15 @@
     // Product Pie Chart
     const ctxPie = document.getElementById('productPieChart');
     new Chart(ctxPie, {
-        type: 'doughnut',
+        type: 'pie',
         data: {
-            labels: ['Product A', 'Product B', 'Product C'],
+            labels: {{ pie_labels|tojson }},
             datasets: [{
                 label: 'Sales Distribution',
-                data: [300, 50, 100],
+                data: {{ pie_values|tojson }},
                 backgroundColor: [
-                    '#0d6efd',
-                    '#ffc107',
-                    '#0dcaf0'
+                    '#0d6efd', '#ffc107', '#0dcaf0', '#198754', '#dc3545', 
+                    '#6610f2', '#fd7e14', '#20c997', '#e83e8c', '#6f42c1'
                 ],
                 borderWidth: 0
             }]

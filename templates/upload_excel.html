@@ -15,7 +15,28 @@
                 <i class="fas fa-file-excel fa-4x text-success"></i>
             </div>
             <form method="POST" enctype="multipart/form-data">
-                <div class="mb-4">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6 text-start">
+                        <label for="month" class="form-label fw-semibold">Target Month</label>
+                        <select name="month" id="month" class="form-select">
+                            <option value="1">January</option><option value="2">February</option>
+                            <option value="3">March</option><option value="4">April</option>
+                            <option value="5">May</option><option value="6">June</option>
+                            <option value="7">July</option><option value="8">August</option>
+                            <option value="9">September</option><option value="10">October</option>
+                            <option value="11">November</option><option value="12">December</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 text-start">
+                        <label for="year" class="form-label fw-semibold">Target Year</label>
+                        <select name="year" id="year" class="form-select">
+                            <option value="2024">2024</option>
+                            <option value="2025" selected>2025</option>
+                            <option value="2026">2026</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-4 text-start">
                     <label for="file" class="form-label fw-semibold">Choose Excel File (.xlsx)</label>
                     <input class="form-control" type="file" id="file" name="file" accept=".xlsx, .xls" required>
                 </div>
@@ -28,9 +49,10 @@
             </form>
             <div class="mt-4 text-start">
                 <h6 class="fw-bold"><i class="fas fa-info-circle me-1"></i> Important Note:</h6>
+                <p class="text-muted small">File must follow the <strong>FLPL STOCK REPORT</strong> template format with headers starting at row 3.</p>
                 <ul class="text-muted small">
-                    <li>File must have headers: Product Code, Product Name, Pack, Invoice Number, Date, Batch Number, Quantity, Rate, Value, Customer Name.</li>
-                    <li>Date format should be YYYY-MM-DD.</li>
+                    <li>Required headers: PRODUCT DESCRIPTION, OPENING STOCK, RECEIVE, SALE QUANTITY...</li>
+                    <li>Ensure duplicate 'REPLACE + OTHERS' columns are in order (In, then Out).</li>
                 </ul>
             </div>
         </div>
