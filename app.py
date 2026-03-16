@@ -3,6 +3,13 @@ from flask_login import LoginManager
 from models import db, User
 from config import Config
 import os
+import logging
+
+# Professional Logging Configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+)
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -30,6 +37,15 @@ app.register_blueprint(sales_bp)
 app.register_blueprint(stock_bp)
 app.register_blueprint(reports_bp)
 app.register_blueprint(main_bp)
+
+@app.errorhandler(500)
+def internal_error(error):
+    app.logger.error(f'Server Error: {error}')
+    return render_template('error.html', message="Something went wrong internally. We have logged this error."), 500
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('error.html', message="Oops! The page you're looking for doesn't exist."), 404
 
 with app.app_context():
     db.create_all()

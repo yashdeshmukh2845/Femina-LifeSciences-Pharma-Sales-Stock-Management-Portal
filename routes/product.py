@@ -30,6 +30,12 @@ def add_product():
         list_price = request.form.get('list_price')
         pts_price = request.form.get('pts_price')
         
+        # Pre-check for duplicate
+        existing_product = Product.query.filter_by(product_code=code).first()
+        if existing_product:
+            flash("Product code already exists. Please use a different code.", "danger")
+            return redirect(url_for('product.add_product'))
+            
         new_product = Product(
             product_code=code,
             product_name=name,
@@ -38,10 +44,21 @@ def add_product():
             pts_price=pts_price if pts_price else None,
             user_id=current_user.id
         )
-        db.session.add(new_product)
-        db.session.commit()
-        flash('Product added to Master List!')
-        return redirect(url_for('product.list_products'))
+        
+        from sqlalchemy.exc import IntegrityError
+        try:
+            db.session.add(new_product)
+            db.session.commit()
+            flash('Product added to Master List!', 'success')
+            return redirect(url_for('product.list_products'))
+        except IntegrityError:
+            db.session.rollback()
+            flash('Product code already exists. Database constraint violated.', 'danger')
+            return redirect(url_for('product.add_product'))
+        except Exception as e:
+            db.session.rollback()
+            flash('An unexpected error occurred. Please try again.', 'danger')
+            return redirect(url_for('product.add_product'))
     
     return render_template('add_product.html')
 
@@ -54,14 +71,31 @@ def edit_product(id):
         return redirect(url_for('product.list_products'))
         
     if request.method == 'POST':
-        product.product_code = request.form.get('product_code')
-        product.product_name = request.form.get('product_name')
-        product.pack = request.form.get('pack_size')
+        code = request.form.get('product_code')
+        name = request.form.get('product_name')
+        pack = request.form.get('pack_size')
+        
+        # Pre-check for duplicate if code changed
+        if code != product.product_code:
+            existing = Product.query.filter_by(product_code=code).first()
+            if existing:
+                flash('Another product already uses this code.', 'danger')
+                return render_template('edit_product.html', product=product)
+
+        product.product_code = code
+        product.product_name = name
+        product.pack = pack
         product.list_price = request.form.get('list_price') if request.form.get('list_price') else None
         product.pts_price = request.form.get('pts_price') if request.form.get('pts_price') else None
-        db.session.commit()
-        flash('Product updated!')
-        return redirect(url_for('product.list_products'))
+        
+        try:
+            db.session.commit()
+            flash('Product updated!', 'success')
+            return redirect(url_for('product.list_products'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Error while updating product. Please try again.', 'danger')
+            return render_template('edit_product.html', product=product)
         
     return render_template('edit_product.html', product=product)
 

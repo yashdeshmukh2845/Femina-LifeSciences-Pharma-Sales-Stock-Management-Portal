@@ -54,6 +54,12 @@ def dashboard():
         Sale.sale_date == today
     ).scalar() or 0
     
+    # 5. Monthly Sales
+    monthly_sales_value = db.session.query(db.func.sum(Sale.value)).filter(
+        Sale.user_id == current_user.id,
+        Sale.sale_date >= start_of_month
+    ).scalar() or 0
+    
     # 6. Monthly Sales Trend (Real Data)
     sales_trend_data = db.session.query(
         db.func.date_trunc('month', Sale.sale_date).label('month'),
