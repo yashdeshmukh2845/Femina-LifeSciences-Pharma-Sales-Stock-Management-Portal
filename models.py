@@ -67,6 +67,9 @@ class StockReceipt(db.Model):
     received_date = db.Column(db.Date, default=datetime.utcnow, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Relationships
+    product = db.relationship("Product", backref="batches")
+
 class Stock(db.Model):
     __tablename__ = 'stock'
     id = db.Column(db.Integer, primary_key=True)

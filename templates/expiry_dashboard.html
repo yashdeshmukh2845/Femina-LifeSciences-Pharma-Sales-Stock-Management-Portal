@@ -31,8 +31,8 @@
                     {% for batch in batches %}
                     <tr>
                         <td class="ps-4">
-                            <div class="fw-bold">{{ batch.product.product_name }}</div>
-                            <small class="text-muted">{{ batch.product.product_code }} | {{ batch.product.pack }}</small>
+                            <div class="fw-bold">{{ batch.p_name }}</div>
+                            <small class="text-muted">{{ batch.product.product_code if batch.product else 'N/A' }} | {{ batch.product.pack if batch.product else 'N/A' }}</small>
                         </td>
                         <td><span class="badge bg-light text-dark border">{{ batch.batch_no }}</span></td>
                         <td class="fw-bold">{{ batch.remaining_quantity }}</td>

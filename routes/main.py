@@ -97,13 +97,16 @@ def expiry_dashboard():
     from datetime import date, timedelta
     
     today = date.today()
-    batches = StockReceipt.query.filter(
+    # Explicit join to ensure product data is available and avoid attribute errors
+    batches = StockReceipt.query.join(Product).filter(
         StockReceipt.user_id == current_user.id,
         StockReceipt.remaining_quantity > 0
     ).order_by(StockReceipt.expiry_date.asc()).all()
     
     # Enrich batches with days remaining and color
     for b in batches:
+        # Safe access to product name
+        b.p_name = b.product.product_name if b.product else "Unknown Product"
         if b.expiry_date:
             b.days_remaining = (b.expiry_date - today).days
             if b.days_remaining < 60:

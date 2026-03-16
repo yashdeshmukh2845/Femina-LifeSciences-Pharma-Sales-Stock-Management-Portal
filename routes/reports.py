@@ -88,27 +88,46 @@ def export_products():
 @reports_bp.route('/reports/export-inventory')
 @login_required
 def export_inventory():
-    from models import StockReceipt
-    receipts = StockReceipt.query.filter(StockReceipt.user_id == current_user.id, StockReceipt.remaining_quantity > 0).all()
-    data = []
-    for r in receipts:
-        data.append({
-            'Product': r.product.product_name,
-            'Batch No': r.batch_no,
-            'Expiry': r.expiry_date.strftime('%Y-%m-%d') if r.expiry_date else 'N/A',
-            'SOH (Units)': r.remaining_quantity,
-            'PTS Rate': float(r.product.pts_price or 0),
-            'Inventory Value': float(r.remaining_quantity * (r.product.pts_price or 0))
-        })
-    
-    df = pd.DataFrame(data)
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Live Inventory')
-    output.seek(0)
-    
-    return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                     as_attachment=True, download_name=f'Live_Inventory_{datetime.now().strftime("%Y%m%d")}.xlsx')
+    from flask import current_app
+    from models import StockReceipt, Product
+    try:
+        # Explicit join and filtered query for better performance and safety
+        records = db.session.query(StockReceipt).join(Product).filter(
+            StockReceipt.user_id == current_user.id,
+            StockReceipt.remaining_quantity > 0
+        ).all()
+        
+        data = []
+        for r in records:
+            # Safe attribute access to prevent AttributeError
+            p_name = r.product.product_name if r.product else "Unknown"
+            p_pts = float(r.product.pts_price or 0) if r.product else 0
+            
+            data.append({
+                'Product': p_name,
+                'Batch No': r.batch_no,
+                'Expiry': r.expiry_date.strftime('%Y-%m-%d') if r.expiry_date else 'N/A',
+                'SOH (Units)': r.remaining_quantity,
+                'PTS Rate': p_pts,
+                'Inventory Value': float(r.remaining_quantity * p_pts)
+            })
+        
+        if not data:
+            flash("No inventory data found to export.", "warning")
+            return redirect(url_for('reports.report_center'))
+
+        df = pd.DataFrame(data)
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Live Inventory')
+        output.seek(0)
+        
+        return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                         as_attachment=True, download_name=f'Live_Inventory_{datetime.now().strftime("%Y%m%d")}.xlsx')
+    except Exception as e:
+        current_app.logger.error(f"Inventory Export Error: {str(e)}")
+        flash("Export failed. Please check server logs or contact support.", "danger")
+        return redirect(url_for('reports.report_center'))
 
 @reports_bp.route('/reports/customer-sales')
 @login_required
