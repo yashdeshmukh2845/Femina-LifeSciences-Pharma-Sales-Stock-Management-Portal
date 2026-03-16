@@ -9,3 +9,6 @@ instance/
 *.sql
 *.webp
 *.png
+*.txt
+server_log.txt
+push_error.txt
