@@ -51,17 +51,97 @@ def stock_statement():
                            months=months,
                            years=range(2024, 2030))
 
+@reports_bp.route('/reports')
+@login_required
+def report_center():
+    return render_template('report_center.html')
+
+@reports_bp.route('/reports/export-products')
+@login_required
+def export_products():
+    products = Product.query.filter_by(user_id=current_user.id).all()
+    data = []
+    for p in products:
+        # Calculate stock
+        from models import StockReceipt
+        receipts = StockReceipt.query.filter_by(product_id=p.id, user_id=current_user.id).all()
+        total_stock = sum(r.remaining_quantity for r in receipts)
+        data.append({
+            'Product Code': p.product_code,
+            'Product Name': p.product_name,
+            'Pack': p.pack,
+            'List Price': p.list_price,
+            'PTS Price': p.pts_price,
+            'Current Stock': total_stock,
+            'Inventory Value': total_stock * (p.pts_price or 0)
+        })
+    
+    df = pd.DataFrame(data)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Product Master')
+    output.seek(0)
+    
+    return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                     as_attachment=True, download_name=f'Product_Master_{datetime.now().strftime("%Y%m%d")}.xlsx')
+
+@reports_bp.route('/reports/export-inventory')
+@login_required
+def export_inventory():
+    from models import StockReceipt
+    receipts = StockReceipt.query.filter(StockReceipt.user_id == current_user.id, StockReceipt.remaining_quantity > 0).all()
+    data = []
+    for r in receipts:
+        data.append({
+            'Product': r.product.product_name,
+            'Batch No': r.batch_no,
+            'Expiry': r.expiry_date.strftime('%Y-%m-%d') if r.expiry_date else 'N/A',
+            'SOH (Units)': r.remaining_quantity,
+            'PTS Rate': float(r.product.pts_price or 0),
+            'Inventory Value': float(r.remaining_quantity * (r.product.pts_price or 0))
+        })
+    
+    df = pd.DataFrame(data)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Live Inventory')
+    output.seek(0)
+    
+    return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                     as_attachment=True, download_name=f'Live_Inventory_{datetime.now().strftime("%Y%m%d")}.xlsx')
+
 @reports_bp.route('/reports/customer-sales')
 @login_required
 def customer_sales():
-    # Group sales by customer
     sales = Sale.query.filter_by(user_id=current_user.id).order_by(Sale.customer_name, Sale.sale_date.desc()).all()
-    
     customer_data = {}
     for s in sales:
         if s.customer_name not in customer_data:
             customer_data[s.customer_name] = {'sales': [], 'total_value': 0}
         customer_data[s.customer_name]['sales'].append(s)
         customer_data[s.customer_name]['total_value'] += s.value
-        
     return render_template('customer_sales.html', customer_data=customer_data)
+
+@reports_bp.route('/reports/monthly-sales')
+@login_required
+def monthly_sales():
+    month = int(request.args.get('month', datetime.now().month))
+    year = int(request.args.get('year', datetime.now().year))
+    
+    sales = Sale.query.filter(
+        db.extract('month', Sale.sale_date) == month,
+        db.extract('year', Sale.sale_date) == year,
+        Sale.user_id == current_user.id
+    ).all()
+    
+    total_value = sum(s.value for s in sales)
+    total_qty = sum(s.quantity for s in sales)
+    
+    months = [(i, datetime(2000, i, 1).strftime('%B')) for i in range(1, 13)]
+    return render_template('monthly_sales.html', 
+                           sales=sales, 
+                           total_value=total_value, 
+                           total_qty=total_qty,
+                           selected_month=month,
+                           selected_year=year,
+                           months=months)

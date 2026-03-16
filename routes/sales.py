@@ -13,6 +13,42 @@ def sales_report():
     sales = Sale.query.filter_by(user_id=current_user.id).order_by(Sale.sale_date.desc()).all()
     return render_template('sales_report.html', sales=sales)
 
+@sales_bp.route('/api/product-batches/<int:product_id>')
+@login_required
+def get_product_batches(product_id):
+    from models import StockReceipt
+    from datetime import datetime
+    
+    # Get batches with stock, sorted by expiry (FIFO)
+    batches = StockReceipt.query.filter(
+        StockReceipt.product_id == product_id,
+        StockReceipt.remaining_quantity > 0,
+        StockReceipt.user_id == current_user.id
+    ).order_by(StockReceipt.expiry_date.asc()).all()
+    
+    today = datetime.now().date()
+    batch_list = []
+    for b in batches:
+        # Expiry Alert Logic: Red star if expires within 60 days
+        expiry_warning = False
+        if b.expiry_date:
+            days_to_expiry = (b.expiry_date - today).days
+            if days_to_expiry <= 60:
+                expiry_warning = True
+        
+        batch_list.append({
+            'batch_no': b.batch_no,
+            'expiry_date': b.expiry_date.strftime('%Y-%m-%d') if b.expiry_date else 'N/A',
+            'stock': b.remaining_quantity,
+            'expiry_warning': expiry_warning
+        })
+    
+    # Also get product default PTS
+    product = Product.query.get(product_id)
+    pts_price = float(product.pts_price) if product.pts_price else 0.0
+    
+    return {'batches': batch_list, 'pts_price': pts_price}
+
 @sales_bp.route('/sales/add', methods=['GET', 'POST'])
 @login_required
 def add_sale():
@@ -46,9 +82,17 @@ def add_sale():
             available = prev_stock.closing_stock if prev_stock else 0
         
         if total_requested > available:
-            flash("Insufficient Stock Available")
+            flash("Insufficient Total Stock Available")
             return redirect(url_for('sales.add_sale'))
 
+        # FIFO Deduction Logic
+        from models import StockReceipt
+        batches = StockReceipt.query.filter(
+            StockReceipt.product_id == product_id,
+            StockReceipt.remaining_quantity > 0,
+            StockReceipt.user_id == current_user.id
+        ).order_by(StockReceipt.expiry_date.asc()).all()
+        
         # 2. Auto-generate Invoice Number if not provided
         if not invoice_no:
             last_sale = Sale.query.filter_by(user_id=current_user.id).order_by(Sale.id.desc()).first()
@@ -61,22 +105,42 @@ def add_sale():
             else:
                 invoice_no = "INV0001"
 
-        # 3. Create Sale Record
-        new_sale = Sale(
-            customer_name=customer_name,
-            product_id=product_id,
-            invoice_no=invoice_no,
-            sale_date=sale_date,
-            batch_no=batch_no,
-            quantity=quantity,
-            free_quantity=free_quantity,
-            rate=rate,
-            value=value,
-            user_id=current_user.id
-        )
-        db.session.add(new_sale)
-        
-        # 4. Update/Create Stock Record
+        remaining_to_deduct = total_requested
+        for batch in batches:
+            if remaining_to_deduct <= 0:
+                break
+            
+            deduct_qty = min(batch.remaining_quantity, remaining_to_deduct)
+            batch.remaining_quantity -= deduct_qty
+            remaining_to_deduct -= deduct_qty
+            
+            # Record sale entry for this batch slice
+            # (In a simplified system, we might record one sale per batch if it's split)
+            # For now, we use the selected batch from form as primary, but logic enforces FIFO
+            # If user selected a specific batch in UI, we should ideally respect it, 
+            # but the requirement says "Auto select earliest expiry (FIFO)" and "Auto stock deduction".
+            # I will record the sale against the earliest batch that satisfies the quantity.
+            
+            # If it's the first batch or we're splitting, we record.
+            # To keep it simple and fulfill "SALES TABLE must include: batch_no, expiry_date", 
+            # I'll use the data from the first batch used for the main record.
+            if remaining_to_deduct + deduct_qty == total_requested:
+                new_sale = Sale(
+                    customer_name=customer_name,
+                    product_id=product_id,
+                    invoice_no=invoice_no,
+                    sale_date=sale_date,
+                    batch_no=batch.batch_no,
+                    expiry_date=batch.expiry_date,
+                    quantity=quantity, # Total qty
+                    free_quantity=free_quantity,
+                    rate=rate,
+                    value=value,
+                    user_id=current_user.id
+                )
+                db.session.add(new_sale)
+
+        # 4. Update/Create Stock Record for Reports
         if not stock_item:
             prev_stock = Stock.query.filter_by(product_id=product_id, user_id=current_user.id).order_by(Stock.year.desc(), Stock.month.desc()).first()
             opening = prev_stock.closing_stock if prev_stock else 0
@@ -98,14 +162,12 @@ def add_sale():
             db.session.flush()
 
         stock_item.sales += total_requested
-        # Total Quantity = Opening + Receive + Sale Return + Replace
         stock_item.total_quantity = stock_item.opening_stock + stock_item.received_stock + stock_item.sale_return_qty + stock_item.replace_others_in
-        # Closing Stock = Total Quantity - Sales - P/R Quantity - Others Out
         stock_item.closing_stock = stock_item.total_quantity - stock_item.sales - stock_item.pr_quantity - stock_item.replace_others_out
         stock_item.last_movement = datetime.utcnow()
 
         db.session.commit()
-        flash(f'Sale {invoice_no} recorded successfully!')
+        flash(f'Sale {invoice_no} recorded successfully via FIFO!')
         return redirect(url_for('sales.sales_report'))
 
     # Pre-generate next invoice number for display

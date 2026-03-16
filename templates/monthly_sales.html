@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2 class="fw-bold">Monthly Sales Analysis</h2>
+        <p class="text-muted">Detailed review of pharmaceutical sales for a specific month.</p>
+    </div>
+    <div class="col-md-6">
+        <form class="row g-2 justify-content-end" method="GET">
+            <div class="col-auto">
+                <select name="month" class="form-select">
+                    {% for m_id, m_name in months %}
+                    <option value="{{ m_id }}" {{ 'selected' if m_id == selected_month }}>{{ m_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <input type="number" name="year" class="form-select" value="{{ selected_year }}" min="2024" max="2030">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm bg-success text-white">
+            <div class="card-body p-4">
+                <h6 class="text-white-50 fw-bold mb-1">TOTAL SALES VALUE (MONTHLY)</h6>
+                <h2 class="fw-bold mb-0">₹ {{ "{:,.2f}".format(total_value) }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm bg-info text-white">
+            <div class="card-body p-4">
+                <h6 class="text-white-50 fw-bold mb-1">TOTAL QUANTITY SOLD</h6>
+                <h2 class="fw-bold mb-0">{{ total_qty }} Units</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm border-radius-12 overflow-hidden">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Date</th>
+                        <th>Invoice #</th>
+                        <th>Customer</th>
+                        <th>Product</th>
+                        <th>Batch</th>
+                        <th class="text-center">Qty</th>
+                        <th class="text-center">Rate</th>
+                        <th class="text-end pe-4">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale in sales %}
+                    <tr>
+                        <td class="ps-4">{{ sale.sale_date.strftime('%d-%m-%Y') }}</td>
+                        <td class="fw-bold">#{{ sale.invoice_no }}</td>
+                        <td>{{ sale.customer_name }}</td>
+                        <td>{{ sale.product_ref.product_name }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ sale.batch_no }}</span></td>
+                        <td class="text-center">{{ sale.quantity }}</td>
+                        <td class="text-center">₹{{ "{:,.2f}".format(sale.rate) }}</td>
+                        <td class="text-end pe-4 fw-bold">₹{{ "{:,.2f}".format(sale.value) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">No sales found for the selected period.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-6">
+        <h2 class="fw-bold"><i class="fas fa-calendar-xmark text-danger me-2"></i>Expiry Dashboard</h2>
+        <p class="text-muted">Monitor batches approaching expiry to minimize loss.</p>
+    </div>
+    <div class="col-md-6 text-md-end">
+        <span class="badge bg-danger p-2 me-2">Critical (< 60 days)</span>
+        <span class="badge bg-warning p-2 me-2 text-dark">Warning (< 120 days)</span>
+        <span class="badge bg-success p-2">Safe (> 120 days)</span>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm border-radius-12">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Product Name</th>
+                        <th>Batch No</th>
+                        <th>Remaining Stock</th>
+                        <th>Expiry Date</th>
+                        <th>Days Remaining</th>
+                        <th class="text-end pe-4">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for batch in batches %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold">{{ batch.product.product_name }}</div>
+                            <small class="text-muted">{{ batch.product.product_code }} | {{ batch.product.pack }}</small>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ batch.batch_no }}</span></td>
+                        <td class="fw-bold">{{ batch.remaining_quantity }}</td>
+                        <td>{{ batch.expiry_date.strftime('%d %b %Y') if batch.expiry_date else 'N/A' }}</td>
+                        <td>
+                            {% if batch.days_remaining < 0 %}
+                                <span class="text-danger fw-bold">Expired</span>
+                            {% else %}
+                                {{ batch.days_remaining }} Days
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <span class="badge bg-{{ batch.status_color }} rounded-pill px-3">
+                                {% if batch.status_color == 'danger' %}CRITICAL{% elif batch.status_color == 'warning' %}WARNING{% else %}SAFE{% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">No active batches found in inventory.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

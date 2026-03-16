@@ -21,14 +21,21 @@ def receive_stock():
         product = Product.query.get(product_id)
         batch_no = request.form.get('batch_no')
         quantity = int(request.form.get('quantity') or 0)
+        purchase_price = request.form.get('purchase_price')
+        expiry_date_str = request.form.get('expiry_date')
         date_str = request.form.get('date')
-        received_date = datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else datetime.utcnow().date()
         
-        # 1. Record the receipt
+        received_date = datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else datetime.utcnow().date()
+        expiry_date = datetime.strptime(expiry_date_str, '%Y-%m-%d').date() if expiry_date_str else None
+        
+        # 1. Record the receipt with Professional Upgrades
         receipt = StockReceipt(
             product_id=product_id,
             batch_no=batch_no,
             quantity=quantity,
+            remaining_quantity=quantity, # Initialize for FIFO
+            expiry_date=expiry_date,
+            purchase_price=purchase_price if purchase_price else None,
             received_date=received_date,
             user_id=current_user.id
         )
@@ -60,14 +67,12 @@ def receive_stock():
             db.session.flush()
 
         stock_item.received_stock += quantity
-        # Total Quantity = Opening + Receive + Sale Return + Replace
         stock_item.total_quantity = stock_item.opening_stock + stock_item.received_stock + stock_item.sale_return_qty + stock_item.replace_others_in
-        # Closing Stock = Total Quantity - Sales - P/R Quantity - Others Out
         stock_item.closing_stock = stock_item.total_quantity - stock_item.sales - stock_item.pr_quantity - stock_item.replace_others_out
         stock_item.last_movement = datetime.utcnow()
         
         db.session.commit()
         flash(f'Successfully received {quantity} units of {product.product_name}!')
-        return redirect(url_for('stock.stock_report'))
+        return redirect(url_for('product.list_products'))
         
     return render_template('receive_stock.html', products=products, today=datetime.now().strftime('%Y-%m-%d'))

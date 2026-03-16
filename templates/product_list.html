@@ -22,6 +22,10 @@
                         <th class="ps-4">Product Code</th>
                         <th>Product Name</th>
                         <th>Pack Size</th>
+                        <th>List Price</th>
+                        <th>PTS</th>
+                        <th>Total Stock</th>
+                        <th>Stock Value</th>
                         <th class="text-end pe-4">Actions</th>
                     </tr>
                 </thead>
@@ -31,6 +35,10 @@
                         <td class="ps-4 fw-bold text-primary">{{ product.product_code }}</td>
                         <td>{{ product.product_name }}</td>
                         <td>{{ product.pack }}</td>
+                        <td>{{ product.list_price or '0.00' }}</td>
+                        <td>{{ product.pts_price or '0.00' }}</td>
+                        <td>{{ product.total_stock }}</td>
+                        <td>{{ "%.2f"|format(product.stock_value) }}</td>
                         <td class="text-end pe-4">
                             <a href="{{ url_for('product.edit_product', id=product.id) }}" class="btn btn-sm btn-light text-primary me-1"><i class="fas fa-edit"></i></a>
                             <a href="{{ url_for('product.delete_product', id=product.id) }}" class="btn btn-sm btn-light text-danger" onclick="return confirm('Delete this product?')">
@@ -40,9 +48,14 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="4" class="text-center py-5 text-muted">No products in master list.</td>
+                        <td colspan="8" class="text-center py-5 text-muted">No products in master list.</td>
                     </tr>
                     {% endfor %}
+                    <tr class="table-light">
+                        <td colspan="6" class="text-end fw-bold">Total Inventory Value:</td>
+                        <td class="fw-bold text-success">₹ {{ "%.2f"|format(total_inventory_value) }}</td>
+                        <td></td>
+                    </tr>
                 </tbody>
             </table>
         </div>

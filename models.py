@@ -29,6 +29,8 @@ class Product(db.Model):
     product_code = db.Column(db.String(50), unique=True, nullable=False)
     product_name = db.Column(db.String(200), nullable=False)
     pack = db.Column(db.String(50))
+    list_price = db.Column(db.Numeric(10, 2))
+    pts_price = db.Column(db.Numeric(10, 2))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
@@ -49,6 +51,7 @@ class Sale(db.Model):
     rate = db.Column(db.Numeric(10, 2), nullable=False)
     value = db.Column(db.Numeric(12, 2), nullable=False)
     customer_name = db.Column(db.String(200), nullable=False)
+    expiry_date = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class StockReceipt(db.Model):
@@ -58,6 +61,9 @@ class StockReceipt(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
     batch_no = db.Column(db.String(50), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
+    remaining_quantity = db.Column(db.Integer, nullable=False)
+    expiry_date = db.Column(db.Date)
+    purchase_price = db.Column(db.Numeric(10, 2))
     received_date = db.Column(db.Date, default=datetime.utcnow, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

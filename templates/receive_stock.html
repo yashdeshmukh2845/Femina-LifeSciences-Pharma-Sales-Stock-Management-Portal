@@ -21,13 +21,21 @@
                     </div>
 
                     <div class="row mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-6 mb-3">
                             <label for="batch_no" class="form-label fw-bold">Batch Number</label>
                             <input type="text" class="form-control form-control-lg bg-light" id="batch_no" name="batch_no" placeholder="e.g., BN12345" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="expiry_date" class="form-label fw-bold">Expiry Date</label>
+                            <input type="date" class="form-control form-control-lg bg-light" id="expiry_date" name="expiry_date" required>
                         </div>
                         <div class="col-md-6">
                             <label for="quantity" class="form-label fw-bold">Quantity Received</label>
                             <input type="number" class="form-control form-control-lg bg-light" id="quantity" name="quantity" min="1" placeholder="0" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="purchase_price" class="form-label fw-bold">Purchase Price</label>
+                            <input type="number" step="0.01" class="form-control form-control-lg bg-light" id="purchase_price" name="purchase_price" min="0" placeholder="0.00" required>
                         </div>
                     </div>
 

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 text-center text-md-start">
+        <h2 class="fw-bold"><i class="fas fa-file-invoice-dollar text-primary me-2"></i>Pharma Report Center</h2>
+        <p class="text-muted">Generate and export professional reports for inventory, products, and sales.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Inventory Section -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 overflow-hidden">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-boxes-stacked me-2"></i>Inventory & Master Reports</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item px-0 py-3 border-0 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-bold mb-1">Live Batch Inventory</h6>
+                                <p class="text-muted small mb-0">Detailed stock levels by batch and expiry.</p>
+                            </div>
+                            <a href="{{ url_for('reports.export_inventory') }}" class="btn btn-outline-primary"><i class="fas fa-file-excel me-1"></i> Excel</a>
+                        </div>
+                    </div>
+                    <div class="list-group-item px-0 py-3 border-0 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-bold mb-1">Product Master List</h6>
+                                <p class="text-muted small mb-0">All products with pricing and total stock levels.</p>
+                            </div>
+                            <a href="{{ url_for('reports.export_products') }}" class="btn btn-outline-primary"><i class="fas fa-file-excel me-1"></i> Excel</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Section -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 overflow-hidden">
+            <div class="card-header bg-success text-white py-3">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-chart-line me-2"></i>Sales & Analytics Reports</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item px-0 py-3 border-0 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-bold mb-1">Monthly Sales Analysis</h6>
+                                <p class="text-muted small mb-0">Filtered sales data with summary statistics.</p>
+                            </div>
+                            <a href="{{ url_for('reports.monthly_sales') }}" class="btn btn-outline-success"><i class="fas fa-magnifying-glass me-1"></i> View</a>
+                        </div>
+                    </div>
+                    <div class="list-group-item px-0 py-3 border-0 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-bold mb-1">Customer Performance</h6>
+                                <p class="text-muted small mb-0">Sales grouped by customer with total values.</p>
+                            </div>
+                            <a href="{{ url_for('reports.customer_sales') }}" class="btn btn-outline-success"><i class="fas fa-magnifying-glass me-1"></i> View</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info border-0 shadow-sm">
+            <i class="fas fa-circle-info me-2"></i> **Pro Tip:** All Excel reports are generated in real-time and include formula-ready numerical data for your own pivots.
+        </div>
+    </div>
+</div>
+{% endblock %}
