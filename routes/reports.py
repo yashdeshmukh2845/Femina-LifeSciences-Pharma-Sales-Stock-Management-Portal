@@ -1,9 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file
 from flask_login import login_required, current_user
-from models import db, Sale, Product, Stock
-from datetime import datetime
-from utils.excel_export import export_stock_statement_to_excel
+from models import db, Sale, Product, Stock, StockReceipt
+import pandas as pd
 import io
+from datetime import datetime, date
 
 reports_bp = Blueprint('reports', __name__)
 
@@ -98,3 +98,76 @@ def customer_sales():
         customer_data[s.customer_name]['total_value'] += s.value
         
     return render_template('customer_sales.html', customer_data=customer_data)
+
+@reports_bp.route('/export-customer-sales')
+@login_required
+def export_customer_sales():
+    sales = Sale.query.filter_by(user_id=current_user.id).all()
+    
+    data = []
+    for s in sales:
+        data.append({
+            'Customer': s.customer_name,
+            'Invoice #': s.invoice_no,
+            'Product': s.product_ref.product_name,
+            'Pack': s.product_ref.pack,
+            'Date': s.sale_date.strftime('%d-%m-%Y'),
+            'Batch': s.batch_no,
+            'Quantity': s.quantity,
+            'Rate': s.rate,
+            'Value': s.value
+        })
+    
+    df = pd.DataFrame(data)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Customer Sales')
+    
+    output.seek(0)
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=f'Customer_Sales_{datetime.now().strftime("%Y%m%d")}.xlsx'
+    )
+
+@reports_bp.route('/monthly-analysis')
+@login_required
+def monthly_analysis():
+    month = int(request.args.get('month', date.today().month))
+    year = int(request.args.get('year', date.today().year))
+    
+    # 1. Product-wise sales for the month
+    product_sales = db.session.query(
+        Product.product_name,
+        Product.pack,
+        db.func.sum(Sale.quantity).label('total_qty'),
+        db.func.sum(Sale.value).label('total_value')
+    ).join(Sale).filter(
+        Sale.user_id == current_user.id,
+        db.func.extract('month', Sale.sale_date) == month,
+        db.func.extract('year', Sale.sale_date) == year
+    ).group_by(Product.product_name, Product.pack).all()
+    
+    total_month_value = sum(p.total_value for p in product_sales)
+    
+    # 2. Daily trend for the month
+    daily_sales = db.session.query(
+        db.func.extract('day', Sale.sale_date).label('day'),
+        db.func.sum(Sale.value).label('value')
+    ).filter(
+        Sale.user_id == current_user.id,
+        db.func.extract('month', Sale.sale_date) == month,
+        db.func.extract('year', Sale.sale_date) == year
+    ).group_by('day').order_by('day').all()
+    
+    chart_labels = [int(d.day) for d in daily_sales]
+    chart_values = [float(d.value) for d in daily_sales]
+    
+    return render_template('monthly_analysis.html', 
+                           product_sales=product_sales,
+                           total_value=total_month_value,
+                           chart_labels=chart_labels,
+                           chart_values=chart_values,
+                           month=month,
+                           year=year)

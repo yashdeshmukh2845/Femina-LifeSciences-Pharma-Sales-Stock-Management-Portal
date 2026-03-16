@@ -24,11 +24,18 @@ def receive_stock():
         date_str = request.form.get('date')
         received_date = datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else datetime.utcnow().date()
         
+        expiry_str = request.form.get('expiry_date')
+        expiry_date = datetime.strptime(expiry_str, '%Y-%m-%d').date() if expiry_str else None
+        purchase_price = float(request.form.get('purchase_price') or 0)
+        
         # 1. Record the receipt
         receipt = StockReceipt(
             product_id=product_id,
             batch_no=batch_no,
             quantity=quantity,
+            remaining_quantity=quantity,  # Track available stock per batch
+            expiry_date=expiry_date,
+            purchase_price=purchase_price,
             received_date=received_date,
             user_id=current_user.id
         )

@@ -82,6 +82,9 @@
                         <li>
                             <a href="{{ url_for('reports.customer_sales') }}">Customer Wise Sales</a>
                         </li>
+                        <li>
+                            <a href="{{ url_for('reports.monthly_analysis') }}">Monthly Analysis</a>
+                        </li>
                     </ul>
                 </li>
                 <li class="{{ 'active' if request.endpoint == 'sales.upload_excel' }}">

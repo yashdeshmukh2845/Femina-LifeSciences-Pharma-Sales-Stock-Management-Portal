@@ -29,6 +29,7 @@
                         <th>Invoice No</th>
                         <th>Date</th>
                         <th>Batch</th>
+                        <th>Exp Date</th>
                         <th>Qty</th>
                         <th>Free</th>
                         <th>Rate</th>
@@ -46,6 +47,7 @@
                         <td>{{ sale.invoice_no }}</td>
                         <td>{{ sale.sale_date.strftime('%d-%m-%Y') }}</td>
                         <td>{{ sale.batch_no }}</td>
+                        <td>{{ sale.expiry_date.strftime('%m/%y') if sale.expiry_date else 'N/A' }}</td>
                         <td class="fw-bold">{{ sale.quantity }}</td>
                         <td class="text-success">{{ sale.free_quantity }}</td>
                         <td>₹{{ "{:,.2f}".format(sale.rate) }}</td>

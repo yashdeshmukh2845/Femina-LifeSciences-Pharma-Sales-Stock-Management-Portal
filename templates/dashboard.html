@@ -64,6 +64,64 @@
     </div>
 </div>
 
+<!-- Inventory Alerts -->
+<div class="row g-4 mb-4">
+    {% if low_stock or expiring_soon or expiring_next %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm border-radius-12 bg-light">
+            <div class="card-header bg-white border-bottom py-3 d-flex align-items-center">
+                <h5 class="card-title fw-bold mb-0 text-danger"><i class="fas fa-triangle-exclamation me-2"></i>Inventory & Expiry Alerts</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    {% if low_stock %}
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white rounded border-start border-4 border-danger h-100">
+                            <h6 class="fw-bold text-danger mb-2">Low Stock Alert (< 20)</h6>
+                            <ul class="list-unstyled mb-0 small">
+                                {% for item in low_stock[:5] %}
+                                <li class="mb-1 text-dark">• {{ item.name }} ({{ item.pack }}) - <strong>{{ item.qty }} left</strong></li>
+                                {% endfor %}
+                                {% if low_stock|length > 5 %}
+                                <li class="text-muted italic">And {{ low_stock|length - 5 }} more...</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if expiring_soon %}
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white rounded border-start border-4 border-danger h-100">
+                            <h6 class="fw-bold text-danger mb-2">Expiring Sub-60 Days</h6>
+                            <ul class="list-unstyled mb-0 small">
+                                {% for item in expiring_soon[:5] %}
+                                <li class="mb-1 text-dark">• {{ item.name }} ({{ item.batch }}) - <strong>{{ item.exp.strftime('%m/%y') }}</strong></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if expiring_next %}
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white rounded border-start border-4 border-warning h-100">
+                            <h6 class="fw-bold text-warning mb-2">Expiring 3-4 Months</h6>
+                            <ul class="list-unstyled mb-0 small">
+                                {% for item in expiring_next[:5] %}
+                                <li class="mb-1 text-dark">• {{ item.name }} ({{ item.batch }}) - <strong>{{ item.exp.strftime('%m/%y') }}</strong></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
 <div class="row g-4">
     <div class="col-md-8">
         <div class="card border-0 shadow-sm border-radius-12">
@@ -96,10 +154,10 @@
     new Chart(ctx, {
         type: 'line',
         data: {
-            labels: {{ sales_labels|tojson }},
+            labels: JSON.parse('{{ sales_labels|tojson|safe }}'),
             datasets: [{
                 label: 'Monthly Sales Value',
-                data: {{ sales_values|tojson }},
+                data: JSON.parse('{{ sales_values|tojson|safe }}'),
                 borderWidth: 3,
                 borderColor: '#0d6efd',
                 backgroundColor: 'rgba(13, 110, 253, 0.1)',
@@ -122,10 +180,10 @@
     new Chart(ctxPie, {
         type: 'pie',
         data: {
-            labels: {{ pie_labels|tojson }},
+            labels: JSON.parse('{{ pie_labels|tojson|safe }}'),
             datasets: [{
                 label: 'Sales Distribution',
-                data: {{ pie_values|tojson }},
+                data: JSON.parse('{{ pie_values|tojson|safe }}'),
                 backgroundColor: [
                     '#0d6efd', '#ffc107', '#0dcaf0', '#198754', '#dc3545', 
                     '#6610f2', '#fd7e14', '#20c997', '#e83e8c', '#6f42c1'
